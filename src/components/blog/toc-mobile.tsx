@@ -76,10 +76,10 @@ export function TOCMobile({ headings }: TOCMobileProps) {
   const dashOffset = CIRCUMFERENCE * (1 - progress);
 
   return (
-    <div className="w-full xl:hidden border-b border-border">
+    <div className="w-full rounded-lg border border-border bg-muted/30">
       <details ref={detailsRef} className="group">
         <summary className="flex w-full cursor-pointer items-center justify-between list-none [&::-webkit-details-marker]:hidden">
-          <div className="mx-auto flex w-full max-w-2xl items-center px-6 py-3">
+          <div className="flex w-full items-center px-4 py-3">
             <svg className="relative mr-3 size-5" viewBox="0 0 24 24">
               <circle
                 cx="12"
@@ -111,8 +111,8 @@ export function TOCMobile({ headings }: TOCMobileProps) {
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
           </div>
         </summary>
-        <div className="mx-auto max-w-2xl max-h-[30vh] overflow-y-auto">
-          <ul className="flex list-none flex-col gap-y-2 px-6 pb-4">
+        <div className="max-h-[30vh] overflow-y-auto border-t border-border">
+          <ul className="flex list-none flex-col gap-y-2 px-4 py-3">
             {headings.map((heading) => {
               const isActive = activeIds.has(heading.slug);
               return (

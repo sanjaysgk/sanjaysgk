@@ -4,6 +4,7 @@ import { allPosts } from "content-collections";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { paginate, normalizePage } from "@/lib/pagination";
+import { getPostSlug } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -29,10 +30,12 @@ export default async function BlogPage({
 }) {
   const { page: pageParam } = await searchParams;
 
-  const sortedPosts = [...allPosts].sort(
-    (a, b) =>
-      new Date(b.publishedAt).valueOf() - new Date(a.publishedAt).valueOf()
-  );
+  const sortedPosts = [...allPosts]
+    .filter((p) => !p.category || p.category === "blog")
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt).valueOf() - new Date(a.publishedAt).valueOf()
+    );
 
   const totalPages = Math.ceil(sortedPosts.length / PAGE_SIZE);
   const currentPage = normalizePage(pageParam, totalPages);
@@ -42,7 +45,7 @@ export default async function BlogPage({
   });
 
   return (
-    <section>
+    <section className="max-w-2xl mx-auto">
       <BlurFade delay={BLUR_FADE_DELAY}>
         <div className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tighter sm:text-4xl">
@@ -64,7 +67,7 @@ export default async function BlogPage({
 
           <div className="flex flex-col gap-3">
             {paginatedPosts.map((post, idx) => {
-              const slug = post._meta.path.replace(/\.mdx$/, "");
+              const slug = getPostSlug(post._meta.path);
               return (
                 <BlurFade
                   key={slug}

@@ -1,0 +1,49 @@
+---
+title: "Immunolyser: Publishing My First Research Paper"
+publishedAt: "2025-10-15"
+author: "Sanjay"
+summary: "Reflections on building Immunolyser, an automated immunopeptidomics analysis pipeline, and getting it published in CSBJ."
+tags: ["bioinformatics", "publication", "immunopeptidomics"]
+category: "blog"
+---
+
+# Immunolyser: Publishing My First Research Paper
+
+Getting a paper published feels different than I expected. There's no fanfare — just a quiet email saying your manuscript has been accepted. But the journey to get there was anything but quiet.
+
+## What is Immunolyser?
+
+Immunolyser is an automated web-based pipeline for immunopeptidomics data analysis. It standardises what was previously a fragmented, manual process — bringing together peptide length distribution, motif analysis, sequence clustering (via GibbsCluster), and MHC binding affinity prediction (via NetMHCpan) into a single reproducible workflow.
+
+## Why It Matters
+
+Immunopeptidomics — the study of peptides presented by MHC molecules on cell surfaces — is critical for understanding immune responses and developing vaccines. But the data analysis landscape was a mess:
+
+- Every lab had their own scripts
+- Results weren't reproducible
+- New researchers faced a steep learning curve
+
+Immunolyser wraps the entire workflow into a web interface. Upload your data, select your parameters, get publication-ready figures.
+
+## The Publication Journey
+
+The paper was submitted to **Computational and Structural Biotechnology Journal (CSBJ)**, a peer-reviewed open-access journal. The review process took about 3 months:
+
+1. **Initial submission** — June 2025
+2. **First review** — Major revisions requested (additional validation, comparison with existing tools)
+3. **Revision** — Added murine dataset validation, expanded methods section
+4. **Acceptance** — October 2025
+
+The reviewers pushed us to make the paper significantly better. Their feedback on validating across species (human and murine datasets) strengthened our claims considerably.
+
+## Technical Lessons
+
+- **Web-based tools have higher adoption** — Researchers prefer clicking to command-line
+- **Reproducibility is a feature** — Every analysis run gets a unique ID and downloadable report
+- **Documentation matters as much as code** — The user guide took almost as long to write as the codebase
+
+## Read the Paper
+
+- [CSBJ Publication](https://spj.science.org/doi/10.1016/j.csbj.2025.10.007)
+- [PubMed Central](https://pmc.ncbi.nlm.nih.gov/articles/PMC12590289/)
+- [Try Immunolyser](https://immunolyser.erc.monash.edu/)

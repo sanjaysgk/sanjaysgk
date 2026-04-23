@@ -26,7 +26,7 @@ export default function TagsPage() {
   const tags = getSortedTags();
 
   return (
-    <section>
+    <section className="max-w-2xl mx-auto">
       <BlurFade delay={0.04}>
         <h1 className="text-2xl font-semibold tracking-tight mb-2">Tags</h1>
         <p className="text-sm text-muted-foreground mb-8">

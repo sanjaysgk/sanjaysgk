@@ -44,7 +44,7 @@ export default async function TagPage({
     );
 
   return (
-    <section>
+    <section className="max-w-2xl mx-auto">
       <BlurFade delay={0.04}>
         <Link
           href="/blog/tags"

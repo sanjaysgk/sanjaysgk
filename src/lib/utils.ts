@@ -21,6 +21,10 @@ export function getHeadingMargin(depth: number): string {
   return margins[depth] || "";
 }
 
+export function getPostSlug(metaPath: string): string {
+  return metaPath.replace(/\/index\.mdx$|\.mdx$/, "");
+}
+
 export function formatDate(date: string | Date) {
   // Use UTC to ensure consistent formatting between server and client
   const dateObj = typeof date === "string" ? new Date(date) : date;

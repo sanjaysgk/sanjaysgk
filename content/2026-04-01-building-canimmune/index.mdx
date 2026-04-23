@@ -1,0 +1,73 @@
+---
+title: "Building CAN-IMMUNE: A Cancer Neoantigen Discovery Platform"
+publishedAt: "2026-04-01"
+author: "Sanjay"
+summary: "How I built a platform documenting 1.2M+ mutant peptides across 33 cancer types to accelerate neoantigen discovery for immunotherapy research."
+tags: ["bioinformatics", "cancer", "python", "research"]
+category: "blog"
+image: "/canimmune.png"
+---
+
+# Building CAN-IMMUNE: A Cancer Neoantigen Discovery Platform
+
+Cancer immunotherapy is one of the most promising frontiers in oncology. But there's a bottleneck: finding the right neoantigens to target. That's what led me to build CAN-IMMUNE.
+
+## The Problem
+
+Neoantigen-based immunotherapy requires identifying mutant peptides that are presented on the surface of cancer cells via MHC molecules. The challenge? There was no comprehensive, queryable database that mapped mutations to predicted mutant peptides across cancer types at scale.
+
+Researchers were stuck running fragmented pipelines, one cancer type at a time, with no way to cross-reference or generate bespoke peptide libraries for LC-MS/MS experiments.
+
+## The Architecture
+
+CAN-IMMUNE integrates data from multiple sources:
+
+- **COSMIC and CCLE** for somatic mutation data across 33 cancer types and 1,460 cell lines
+- **UniProt** for protein sequence information
+- **NetMHCpan** for MHC binding predictions
+- **MSFragger** for mass spectrometry peptide identification
+
+The platform is built with:
+
+```python
+# Core stack
+Flask          # Web framework
+MySQL          # Relational data storage
+Elasticsearch  # Full-text search across 1.2M+ peptides
+```
+
+## Key Design Decisions
+
+### Why Elasticsearch?
+
+With over 1.2 million mutant peptides and 6.7 million mutations, traditional SQL queries weren't fast enough for the interactive search experience we needed. Elasticsearch gave us sub-second full-text search with faceted filtering by cancer type, tissue, and cell line.
+
+### Why Flask over Django?
+
+The application is primarily a data exploration tool, not a CRUD app. Flask's lightweight nature let us build custom query endpoints without the overhead of Django's ORM and admin system.
+
+## The Data Pipeline
+
+The pipeline processes data in stages:
+
+1. **Mutation extraction** — Parse somatic mutations from COSMIC/CCLE
+2. **Protein mutation mapping** — Map genomic variants to amino acid changes using UniProt sequences
+3. **Peptide generation** — Generate all possible mutant peptides of length 8-14 (MHC Class I) and 12-20 (MHC Class II)
+4. **Binding prediction** — Run NetMHCpan to predict MHC binding affinity
+5. **Database loading** — Index everything in MySQL + Elasticsearch
+
+The entire pipeline runs on the **Monash M3 HPC cluster** using SLURM for job scheduling. Processing 33 cancer types took approximately 72 hours of compute time.
+
+## What I Learned
+
+Building CAN-IMMUNE taught me that the hardest part of bioinformatics isn't the algorithms — it's the data engineering. Cleaning, normalising, and validating mutation data from multiple sources consumed more time than writing any prediction code.
+
+The platform is now live at [canelib.erc.monash.edu](https://canelib.erc.monash.edu/index) and is being used by researchers at Monash BDI for ongoing immunopeptidomics studies.
+
+## What's Next
+
+We're working on:
+- Adding proteomics validation data from LC-MS/MS experiments
+- Integrating structural predictions from AlphaFold
+- Building a REST API for programmatic access
+- Preparing the manuscript for publication

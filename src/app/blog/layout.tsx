@@ -4,8 +4,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const NAV_LINKS = [
   { href: "/blog", label: "Blog" },
+  { href: "/blog/notes", label: "Notes" },
+  { href: "/blog/research", label: "Research" },
   { href: "/blog/tags", label: "Tags" },
-  { href: "/#projects", label: "Projects" },
 ];
 
 export default function BlogLayout({
@@ -14,8 +15,8 @@ export default function BlogLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-8">
-      <header className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto w-full">
+      <header className="flex items-center justify-between max-w-2xl mx-auto">
         <Link
           href="/"
           className="flex items-center gap-2 group"
@@ -40,7 +41,9 @@ export default function BlogLayout({
           ))}
         </nav>
       </header>
-      {children}
+      <div className="mt-8">
+        {children}
+      </div>
     </div>
   );
 }

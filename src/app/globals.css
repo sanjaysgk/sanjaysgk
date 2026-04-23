@@ -136,6 +136,9 @@
 .prose {
     @apply text-foreground text-base leading-7;
   }
+  .prose > h1:first-child {
+    @apply hidden;
+  }
   .prose :where(p) {
     @apply text-foreground/80 my-5;
   }

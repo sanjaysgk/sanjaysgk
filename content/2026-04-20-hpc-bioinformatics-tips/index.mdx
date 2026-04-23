@@ -1,0 +1,130 @@
+---
+title: "HPC for Bioinformatics: Practical Tips for the Monash M3 Cluster"
+publishedAt: "2026-04-20"
+author: "Sanjay"
+summary: "Hard-won lessons from running bioinformatics pipelines on SLURM-managed HPC clusters — job scheduling, memory management, and debugging."
+tags: ["bioinformatics", "hpc", "tutorial"]
+category: "notes"
+---
+
+# HPC for Bioinformatics: Practical Tips for the Monash M3 Cluster
+
+After two years of running pipelines on the Monash M3 cluster, I've accumulated a list of things I wish someone had told me on day one. Most bioinformatics tutorials teach you the tools — STAR, GATK, MSFragger — but nobody teaches you how to run them efficiently on shared HPC infrastructure.
+
+## SLURM Basics That Matter
+
+### Always request resources explicitly
+
+Don't rely on defaults. A job with no memory specification might get 1GB or 100GB depending on the partition defaults — and you won't know until it either crashes or steals resources from other users.
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=neoantigen_pipeline
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=04:00:00
+#SBATCH --partition=comp
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
+```
+
+### Use array jobs for batch processing
+
+If you're processing 33 cancer types, don't submit 33 individual jobs. Use SLURM arrays:
+
+```bash
+#SBATCH --array=1-33
+
+CANCER_TYPE=$(sed -n "${SLURM_ARRAY_TASK_ID}p" cancer_types.txt)
+python process_cancer.py --cancer-type "$CANCER_TYPE"
+```
+
+This gives SLURM a single entity to manage, and you can control all 33 jobs with one `scancel` command.
+
+## Memory Management
+
+### Profile before you scale
+
+Run your pipeline on a small dataset first with `/usr/bin/time -v`:
+
+```bash
+/usr/bin/time -v python my_pipeline.py --input small_test.fasta 2>&1 | grep "Maximum resident"
+```
+
+This tells you the actual peak memory. Request 1.5x that for your production runs.
+
+### Java tools are memory hungry
+
+Tools like GATK and MSFragger run on the JVM. Always set both SLURM memory and JVM heap:
+
+```bash
+#SBATCH --mem=64G
+export _JAVA_OPTIONS="-Xmx56g"  # Leave headroom for OS + overhead
+```
+
+If SLURM memory and JVM heap are equal, the OOM killer will strike.
+
+## File I/O Tips
+
+### Use scratch for intermediate files
+
+Don't write temporary files to your home directory or project space. Use the local scratch disk on the compute node:
+
+```bash
+TMPDIR="/tmp/${SLURM_JOB_ID}"
+mkdir -p "$TMPDIR"
+
+# Run pipeline with scratch as temp
+python pipeline.py --tmp-dir "$TMPDIR" --output /projects/myproject/results/
+
+# Clean up
+rm -rf "$TMPDIR"
+```
+
+### Compress early, compress often
+
+Bioinformatics generates enormous intermediate files. FASTQ, BAM, VCF — they compress well. Use `pigz` (parallel gzip) instead of `gzip` for multi-threaded compression:
+
+```bash
+pigz -p 8 output.fastq  # Uses 8 threads
+```
+
+## Debugging Failed Jobs
+
+### Check the exit codes
+
+SLURM exit codes tell you what happened:
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 137 | OOM killed (SIGKILL) |
+| 143 | Time limit (SIGTERM) |
+
+If you see 137, increase memory. If you see 143, increase time limit or optimise your code.
+
+### Always log versions
+
+Bioinformatics reproducibility starts with knowing your tool versions:
+
+```bash
+echo "=== Software versions ==="
+python --version
+samtools --version | head -1
+nextflow -version | head -1
+```
+
+Put this at the top of every job script. Future you will be grateful.
+
+## Workflow Managers
+
+For anything beyond a single script, use a workflow manager. I use **Nextflow** for most pipelines:
+
+- Handles SLURM submission automatically
+- Resumes from failures (no re-running completed steps)
+- Tracks provenance and reproducibility
+- Docker/Singularity container support
+
+The initial setup cost is worth it. Writing raw SLURM scripts for multi-step pipelines is a path to madness.

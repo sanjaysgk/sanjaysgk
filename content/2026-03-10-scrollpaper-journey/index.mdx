@@ -1,0 +1,55 @@
+---
+title: "Building Scrollpaper: Making Research Papers Accessible"
+publishedAt: "2026-03-10"
+author: "Sanjay"
+summary: "Why I built a mobile app that distills scientific papers into bite-sized daily reads, and what I learned shipping a React Native app."
+tags: ["product", "react-native", "startup"]
+category: "notes"
+---
+
+# Building Scrollpaper: Making Research Papers Accessible
+
+I read a lot of papers. Or rather, I *try* to read a lot of papers. The reality is that most researchers are drowning in a backlog of PDFs they'll never get to. That's why I built Scrollpaper.
+
+## The Problem
+
+Academic papers are optimised for peer review, not comprehension. Dense jargon, walls of text, buried conclusions. Meanwhile, we spend hours scrolling through social media feeds designed to be addictive.
+
+What if we could apply the same feed-based UX to science?
+
+## The Solution
+
+Scrollpaper distills papers into bite-sized daily reads. Swipe through science, not social media. The app uses Gemini AI to:
+
+1. Extract key findings from papers
+2. Rewrite them in plain language
+3. Generate visual summaries
+4. Deliver a personalised daily feed based on your research interests
+
+## The Tech Stack
+
+```
+React Native + Expo    # Cross-platform mobile
+FastAPI + Python       # Backend API
+PostgreSQL             # Data storage
+Gemini AI              # Paper summarisation
+AWS Lambda             # Serverless processing
+```
+
+## Lessons From Shipping
+
+### Start ugly, ship fast
+
+The first version of Scrollpaper looked terrible. But it worked. I showed it to five researchers at Monash, and four of them asked when they could download it. That validation was worth more than any pixel-perfect mockup.
+
+### AI summarisation needs guardrails
+
+Raw LLM output from papers is unreliable. It hallucinates numbers, misattributes findings, and sometimes invents entire conclusions. Building the validation layer — cross-referencing summaries against the original abstract and figures — was the hardest engineering challenge.
+
+### Mobile is a different beast
+
+Coming from web development, React Native felt familiar but the edge cases are brutal. iOS and Android handle text rendering, scroll physics, and notifications differently. Budget 30% more time than you think for platform-specific bugs.
+
+## What's Next
+
+I'm working on a recommendation engine that suggests papers based on what you've read and skipped, not just keyword matching. The goal is to surface papers you didn't know you needed to read.
