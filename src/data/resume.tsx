@@ -120,10 +120,10 @@ export const DATA = {
 
         navbar: true,
       },
-      Youtube: {
-        name: "Youtube",
-        url: "https://youtube.com/@sanjaysgk",
-        icon: Icons.youtube,
+      Research: {
+        name: "Research",
+        url: "/blog/research",
+        icon: Icons.research,
         navbar: true,
       },
       email: {

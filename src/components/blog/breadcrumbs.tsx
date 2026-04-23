@@ -1,16 +1,22 @@
 import Link from "next/link";
-import { ChevronRight, Home, NotebookText } from "lucide-react";
+import { ChevronRight, Home, NotebookText, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbItem {
   href?: string;
   label: string;
+  icon?: "page" | "post";
 }
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
 }
+
+const ICONS = {
+  page: FileText,
+  post: FileText,
+};
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
@@ -35,23 +41,28 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
         <NotebookText className="size-4" />
         <span>Blog</span>
       </Link>
-      {items.map((item, index) => (
-        <span key={item.label} className="flex items-center gap-1.5">
-          <ChevronRight className="size-3" />
-          {index === items.length - 1 ? (
-            <span className="text-foreground font-medium truncate max-w-[200px]">
-              {item.label}
-            </span>
-          ) : (
-            <Link
-              href={item.href || "#"}
-              className="hover:text-foreground transition-colors"
-            >
-              {item.label}
-            </Link>
-          )}
-        </span>
-      ))}
+      {items.map((item, index) => {
+        const IconComponent = item.icon ? ICONS[item.icon] : null;
+        return (
+          <span key={item.label} className="flex items-center gap-1.5">
+            <ChevronRight className="size-3" />
+            {index === items.length - 1 ? (
+              <span className="flex items-center gap-1.5 text-foreground font-medium truncate max-w-[250px]">
+                {IconComponent && <IconComponent className="size-4 shrink-0" />}
+                {item.label}
+              </span>
+            ) : (
+              <Link
+                href={item.href || "#"}
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                {IconComponent && <IconComponent className="size-4 shrink-0" />}
+                {item.label}
+              </Link>
+            )}
+          </span>
+        );
+      })}
     </nav>
   );
 }
