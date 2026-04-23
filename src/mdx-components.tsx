@@ -1,3 +1,4 @@
+import { Callout } from "@/components/blog/callout";
 import { CodeBlock } from "@/components/mdx/code-block";
 import { MediaContainer } from "@/components/mdx/media-container";
 import type { ComponentProps } from "react";
@@ -7,6 +8,7 @@ type CodeProps = ComponentProps<"code"> & {
 };
 
 export const mdxComponents = {
+  Callout,
   MediaContainer,
   pre: (props: ComponentProps<"pre">) => <CodeBlock {...props} />,
   hr: (props: ComponentProps<"hr">) => (

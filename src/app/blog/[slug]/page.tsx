@@ -1,21 +1,18 @@
 import { allPosts } from "content-collections";
-import { formatDate } from "@/lib/utils";
-import { DATA } from "@/data/resume";
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { MDXContent } from "@content-collections/mdx/react";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { DATA } from "@/data/resume";
+import { formatDate, readingTime } from "@/lib/utils";
 import { mdxComponents } from "@/mdx-components";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Breadcrumbs } from "@/components/blog/breadcrumbs";
+import { PostNavigation } from "@/components/blog/post-navigation";
+import { TOCSidebar } from "@/components/blog/toc-sidebar";
+import { TOCMobile } from "@/components/blog/toc-mobile";
+import { ScrollToTop } from "@/components/blog/scroll-to-top";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
-function getSortedPosts() {
-  return [...allPosts].sort((a, b) => {
-    if (new Date(a.publishedAt) > new Date(b.publishedAt)) {
-      return -1;
-    }
-    return 1;
-  });
-}
 
 export async function generateStaticParams() {
   return allPosts.map((post) => ({
@@ -26,168 +23,210 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{
-    slug: string;
-  }>;
-}): Promise<Metadata | undefined> {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  const post = allPosts.find((p) => p._meta.path.replace(/\.mdx$/, "") === slug);
+  const post = allPosts.find(
+    (p) => p._meta.path.replace(/\.mdx$/, "") === slug
+  );
+  if (!post) return {};
 
-  if (!post) {
-    return undefined;
-  }
-
-  let {
-    title,
-    publishedAt: publishedTime,
-    summary: description,
-    image,
-  } = post;
+  const { title, summary, publishedAt, image } = post;
+  const ogImage = image || `${DATA.url}/blog/${slug}/opengraph-image`;
 
   return {
     title,
-    description,
+    description: summary,
     openGraph: {
       title,
-      description,
+      description: summary,
       type: "article",
-      publishedTime,
+      publishedTime: publishedAt,
       url: `${DATA.url}/blog/${slug}`,
-      ...(image && {
-        images: [
-          {
-            url: `${DATA.url}${image}`,
-          },
-        ],
-      }),
+      images: [{ url: ogImage }],
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description,
-      ...(image && {
-        images: [`${DATA.url}${image}`],
-      }),
+      description: summary,
+      images: [ogImage],
     },
   };
 }
 
-export default async function Blog({
+function extractHeadings(content: string) {
+  const headingRegex = /^(#{2,6})\s+(.+)$/gm;
+  const headings: { depth: number; text: string; slug: string }[] = [];
+  let match;
+  while ((match = headingRegex.exec(content)) !== null) {
+    const text = match[2]
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/`(.+?)`/g, "$1");
+    const slug = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+    headings.push({ depth: match[1].length, text, slug });
+  }
+  return headings;
+}
+
+export default async function BlogPostPage({
   params,
 }: {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const sortedPosts = getSortedPosts();
-  const currentIndex = sortedPosts.findIndex(
+  const sortedPosts = [...allPosts].sort(
+    (a, b) =>
+      new Date(b.publishedAt).valueOf() - new Date(a.publishedAt).valueOf()
+  );
+
+  const postIndex = sortedPosts.findIndex(
     (p) => p._meta.path.replace(/\.mdx$/, "") === slug
   );
-  const post = sortedPosts[currentIndex];
+  if (postIndex === -1) notFound();
 
-  if (!post) {
-    notFound();
-  }
+  const post = sortedPosts[postIndex];
+  const newerPost = postIndex > 0 ? sortedPosts[postIndex - 1] : undefined;
+  const olderPost =
+    postIndex < sortedPosts.length - 1
+      ? sortedPosts[postIndex + 1]
+      : undefined;
 
-  const previousPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
-  const nextPost = currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
-
-  const getSlug = (post: (typeof sortedPosts)[0]) =>
-    post._meta.path.replace(/\.mdx$/, "");
-
-  const jsonLdContent = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
-    description: post.summary,
-    image: post.image
-      ? `${DATA.url}${post.image}`
-      : `${DATA.url}/blog/${slug}/opengraph-image`,
-    url: `${DATA.url}/blog/${slug}`,
-    author: {
-      "@type": "Person",
-      name: DATA.name,
-    },
-  }).replace(/</g, "\\u003c");
+  const headings = extractHeadings(post.content);
 
   return (
-    <section id="blog">
+    <>
       <script
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: jsonLdContent,
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.title,
+            datePublished: post.publishedAt,
+            dateModified: post.updatedAt || post.publishedAt,
+            description: post.summary,
+            image: post.image || `${DATA.url}/blog/${slug}/opengraph-image`,
+            url: `${DATA.url}/blog/${slug}`,
+            author: {
+              "@type": "Person",
+              name: DATA.name,
+            },
+          }),
         }}
       />
-      <div className="flex justify-start gap-4 items-center">
-        <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors border border-border rounded-lg px-2 py-1 inline-flex items-center gap-1 mb-6 group" aria-label="Back to Blog">
-          <ChevronLeft className="size-3 group-hover:-translate-x-px transition-transform" />
-          Back to Blog
-        </Link>
-      </div>
-      <div className="flex flex-col gap-4">
-        <h1 className="title font-semibold text-3xl md:text-4xl tracking-tighter leading-tight">
-          {post.title}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {formatDate(post.publishedAt)}
-        </p>
-      </div>
-      <div className="my-6 flex w-full items-center">
-        <div
-          className="flex-1 h-px bg-border"
-          style={{
-            maskImage:
-              "linear-gradient(90deg, transparent, black 8%, black 92%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent, black 8%, black 92%, transparent)",
-          }}
-        />
-      </div>
-      <article className="prose max-w-full text-pretty font-sans leading-relaxed text-muted-foreground dark:prose-invert">
-        <MDXContent code={post.mdx} components={mdxComponents} />
-      </article>
 
-      <nav className="mt-12 pt-8 max-w-2xl">
-        <div className="flex flex-col sm:flex-row justify-between gap-4">
-          {previousPost ? (
-            <Link
-              href={`/blog/${getSlug(previousPost)}`}
-              className="group flex-1 flex flex-col gap-1 p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
-            >
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <ChevronLeft className="size-3" />
-                Previous
-              </span>
-              <span className="text-sm font-medium group-hover:text-foreground transition-colors whitespace-normal wrap-break-word">
-                {previousPost.title}
-              </span>
-            </Link>
-          ) : (
-            <div className="hidden sm:block flex-1" />
-          )}
+      {/* Mobile TOC */}
+      <TOCMobile headings={headings} />
 
-          {nextPost ? (
-            <Link
-              href={`/blog/${getSlug(nextPost)}`}
-              className="group flex-1 flex flex-col gap-1 p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors text-right"
+      {/* 3-column grid */}
+      <div className="grid grid-cols-[minmax(0px,1fr)_min(calc(100%-2rem),42rem)_minmax(0px,1fr)] gap-y-6">
+        {/* Desktop TOC Sidebar */}
+        <TOCSidebar headings={headings} />
+
+        {/* Center Content Column */}
+        <div className="col-start-2 flex flex-col gap-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs items={[{ label: post.title }]} />
+
+          {/* Post Header */}
+          <header className="flex flex-col gap-y-4">
+            <h1
+              id="post-title"
+              className="scroll-mt-20 text-3xl leading-tight font-semibold tracking-tighter sm:text-4xl"
             >
-              <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
-                Next
-                <ChevronRight className="size-3" />
-              </span>
-              <span className="text-sm font-medium group-hover:text-foreground transition-colors whitespace-normal wrap-break-word">
-                {nextPost.title}
-              </span>
-            </Link>
-          ) : (
-            <div className="hidden sm:block flex-1" />
-          )}
+              {post.title}
+            </h1>
+
+            {/* Metadata Bar */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              <span>{formatDate(post.publishedAt)}</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span>{readingTime(post.content)}</span>
+            </div>
+
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <Link key={tag} href={`/blog/tags/${tag}`}>
+                    <Badge
+                      variant="outline"
+                      className="text-xs hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </header>
+
+          {/* Decorative line */}
+          <div className="flex items-center gap-4">
+            <div
+              className="flex-1 h-px bg-border"
+              style={{
+                maskImage:
+                  "linear-gradient(to right, transparent, black 20%, black 80%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent, black 20%, black 80%, transparent)",
+              }}
+            />
+          </div>
+
+          {/* Top Navigation */}
+          <PostNavigation
+            newer={
+              newerPost
+                ? {
+                    slug: newerPost._meta.path.replace(/\.mdx$/, ""),
+                    title: newerPost.title,
+                  }
+                : undefined
+            }
+            older={
+              olderPost
+                ? {
+                    slug: olderPost._meta.path.replace(/\.mdx$/, ""),
+                    title: olderPost.title,
+                  }
+                : undefined
+            }
+          />
+
+          {/* Article */}
+          <article className="prose max-w-none">
+            <MDXContent code={post.mdx} components={mdxComponents} />
+          </article>
+
+          {/* Bottom Navigation */}
+          <PostNavigation
+            newer={
+              newerPost
+                ? {
+                    slug: newerPost._meta.path.replace(/\.mdx$/, ""),
+                    title: newerPost.title,
+                  }
+                : undefined
+            }
+            older={
+              olderPost
+                ? {
+                    slug: olderPost._meta.path.replace(/\.mdx$/, ""),
+                    title: olderPost.title,
+                  }
+                : undefined
+            }
+            className="mt-8 pt-8 border-t border-border"
+          />
         </div>
-      </nav>
-    </section>
+      </div>
+
+      <ScrollToTop />
+    </>
   );
 }
